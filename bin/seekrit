@@ -1,0 +1,44 @@
+#! /usr/bin/ruby1.8
+require 'seekrit/store'
+require 'seekrit/interactor'
+require 'highline/import'
+
+DATAFILE = ENV['HOME'] + '/.seekrit-data'
+
+def interactor
+  err = nil
+  3.times do
+    begin
+      password = ask('Enter password: '){ |q| q.echo = false }
+      store = Seekrit::Store.new(password, DATAFILE)
+      return Seekrit::Interactor.new(store)
+    rescue Seekrit::DecryptionError => err
+    end
+  end
+  puts err.message
+  exit 1
+end
+
+command = ARGV.shift
+names = ARGV
+case command
+when 'show', 's'
+  interactor.show(names)
+when 'edit', 'e'
+  interactor.edit(names)
+when 'list', 'l'
+  interactor.list(names)
+when 'delete'
+  interactor.delete(names)
+when 'rename'
+  interactor.rename(names.shift, names.shift)
+else
+  puts "Unknown command '#{command}'", '' if command
+puts <<END
+list                      List all entries.
+show name(s)              Show matching entries.
+edit name(s)              Create or modify entries.
+delete name(s)            Delete entries.
+rename old_name new_name  Rename entry.
+END
+end
