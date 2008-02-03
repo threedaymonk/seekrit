@@ -53,6 +53,12 @@ module Seekrit
       store.save
     end
 
+    def export(filename)
+      File.open(filename, 'w') do |io|
+        io << YAML.dump(store.export)
+      end
+    end
+
   private
 
     def shred(filename, cycles=7)

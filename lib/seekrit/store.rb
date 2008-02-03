@@ -41,6 +41,10 @@ module Seekrit
       save_data(secrets)
     end
 
+    def export
+      secrets
+    end
+
     def key
       Digest::SHA256.digest(@password)
     end

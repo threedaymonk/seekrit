@@ -32,6 +32,8 @@ when 'delete'
   interactor.delete(names)
 when 'rename'
   interactor.rename(names.shift, names.shift)
+when 'export'
+  interactor.export(names.shift)
 else
   puts "Unknown command '#{command}'", '' if command
 puts <<END
