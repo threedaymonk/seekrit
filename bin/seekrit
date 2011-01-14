@@ -2,11 +2,13 @@
 require 'seekrit/store'
 require 'seekrit/interactor'
 require 'highline/import'
+require 'fileutils'
 
-DATAFILE = ENV['HOME'] + '/.seekrit-data'
+DATAFILE = ENV['HOME'] + '/.config/seekrit/secrets'
 
 def interactor
   err = nil
+  FileUtils.mkdir_p(File.dirname(DATAFILE))
   File.open(DATAFILE, "r+") do |file|
     3.times do
       begin

@@ -11,14 +11,14 @@ class StoreTest < Test::Unit::TestCase
     assert_equal [], store.keys
   end
 
-  def test_should_save_and_retrieve
+  def test_should_save_and_retrieve_with_arbitrary_key
     buffer = ""
     s1 = Store.new("rhubarb", StringIO.new(buffer))
-    s1["foo"] = "bar"
+    s1["foo\tbar"] = "baz"
     s1.save
 
     s2 = Store.new("rhubarb", StringIO.new(buffer))
-    assert_equal "bar", s2["foo"]
+    assert_equal "baz", s2["foo\tbar"]
   end
 
   def test_should_not_decrypt_with_wrong_password

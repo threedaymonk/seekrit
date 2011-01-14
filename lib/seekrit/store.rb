@@ -41,7 +41,9 @@ module Seekrit
 
     def save
       @file.rewind
-      @file << encrypt(YAML.dump(secrets))
+      secrets.sort_by{ |k,_| k }.each do |name, value|
+        @file << escape(name) << "\t" << hexdump(encrypt(value)) << "\n"
+      end
     end
 
     def export(io)
@@ -79,12 +81,20 @@ module Seekrit
     end
 
     def load_data(file)
-      raw = file.read
-      if raw == ''
-        {}
-      else
-        YAML.load(decrypt(raw))
+      data = {}
+      while line = file.gets
+        a, b = line.split(/\t/, 2)
+        data[unescape(a)] = decrypt(hexload(b))
       end
+      data
+    end
+
+    def hexdump(binary)
+      binary.unpack('C*').map{ |a| "%02x" % a }.join
+    end
+
+    def hexload(hex)
+      hex.scan(/../).map{ |a| a.to_i(16) }.pack('C*')
     end
 
     def encrypt(data)
