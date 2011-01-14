@@ -11,64 +11,86 @@ module Seekrit
     
     attr_reader :secrets
 
-    def initialize(password, path, cipher=CIPHER)
-      @password, @path, @cipher = password, path, cipher
-      @secrets = load_data
+    def initialize(password, file, cipher=CIPHER)
+      @password = password
+      @cipher   = cipher
+      @file     = file
+      @secrets  = load_data(file)
     end
-    
-    def retrieve(name)
+
+    def keys
+      secrets.keys
+    end
+
+    def [](name)
       secrets[name]
     end
 
-    def update(name, data)
-      secrets[name] = data
+    def []=(name, value)
+      secrets[name] = value
     end
-
+    
     def delete(name)
       secrets.delete(name)
     end
 
     def rename(oldname, newname)
-      secrets[newname] = secrets[oldname]
-      secrets.delete(oldname)
-    end
-
-    def list
-      secrets.keys.sort
+      self[newname] = self[oldname]
+      delete(oldname)
     end
 
     def save
-      save_data(secrets)
+      @file.rewind
+      @file << encrypt(YAML.dump(secrets))
     end
 
-    def export
-      secrets
+    def export(io)
+      secrets.sort_by{ |k,_| k }.each do |name, value|
+        io << escape(name) << "\t" << escape(value) << "\n"
+      end
     end
 
-    def key
-      Digest::SHA256.digest(@password)
+    def import(io)
+      secrets.clear
+      while line = io.gets
+        name, data = line.chomp.split(/\t/, 2).map{ |a| unescape(a) }
+        self[name] = data
+      end
     end
 
   private
 
-    def load_data
-      if File.exist?(@path)
-        return YAML.load( decrypt( File.read( @path )))
-      else
-        return {}
-      end
+    def crypt_key
+      Digest::SHA256.digest(@password)
     end
 
-    def save_data(data)
-      File.open(@path, 'w') do |io|
-        io << encrypt( YAML.dump( data ))
+    def escape(value)
+      value.
+        gsub(/\\/, "\\\\\\\\").
+        gsub(/\t/, "\\\\t").
+        gsub(/\n/, "\\\\n")
+    end
+
+    def unescape(value)
+      value.
+        gsub(/\\n/, "\n").
+        gsub(/\\t/, "\t").
+        gsub(/\\\\/, "\\\\")
+    end
+
+    def load_data(file)
+      raw = file.read
+      if raw == ''
+        {}
+      else
+        YAML.load(decrypt(raw))
       end
     end
 
     def encrypt(data)
       cipher = OpenSSL::Cipher::Cipher.new(@cipher)
       cipher.encrypt
-      cipher.key = key
+      cipher.key = crypt_key
       cipher.iv = iv = cipher.random_iv
       ciphertext = cipher.update(data)
       ciphertext << cipher.final
@@ -80,12 +102,12 @@ module Seekrit
       iv = data[0, cipher.iv_len]
       ciphertext = data[cipher.iv_len..-1]
       cipher.decrypt
-      cipher.key = key
+      cipher.key = crypt_key
       cipher.iv = iv
       plaintext = cipher.update(ciphertext)
       plaintext << cipher.final
       return plaintext
-    rescue OpenSSL::CipherError => err
+    rescue => err
       raise DecryptionError, err.message
     end
   end

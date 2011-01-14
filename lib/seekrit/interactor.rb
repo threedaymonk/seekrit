@@ -13,7 +13,7 @@ module Seekrit
 
     def show(names)
       names.each do |name|
-        data = store.retrieve(name)
+        data = store[name]
         puts(name, data, '')
       end
     end
@@ -21,10 +21,10 @@ module Seekrit
     def edit(names)
       names.each do |name|
         comment = "\# #{name}\n"
-        data = comment + (store.retrieve(name) || '')
+        data = comment + (store[name] || '')
         external_editor(data) do |data|
           data.sub!(/\A#{Regexp.escape(comment)}/, '')
-          store.update(name, data)
+          store[name] = data
           store.save
         end
       end
@@ -43,7 +43,7 @@ module Seekrit
       else
         regexp = /#{ patterns.map{ |p| Regexp.escape(p) }.join('|') }/
       end
-      store.list.each do |name|
+      store.keys.sort_by{ |a| a.upcase }.each do |name|
         puts name if name =~ regexp
       end
     end
@@ -55,15 +55,22 @@ module Seekrit
 
     def export(filename)
       File.open(filename, 'w') do |io|
-        io << YAML.dump(store.export)
+        store.export io
+      end
+    end
+
+    def import(filename)
+      File.open(filename, 'r') do |io|
+        store.import io
+        store.save
       end
     end
 
   private
 
-    def shred(filename, cycles=7)
+    def shred(filename, cycles=1)
       data_length = File.stat(filename).size
-      File.open(filename, 'w') do |io|
+      File.open(filename, 'wb') do |io|
         cycles.times do
           io.rewind
           io << random_bytes(data_length)

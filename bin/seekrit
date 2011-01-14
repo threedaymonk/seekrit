@@ -7,33 +7,37 @@ DATAFILE = ENV['HOME'] + '/.seekrit-data'
 
 def interactor
   err = nil
-  3.times do
-    begin
-      password = ask('Enter password: '){ |q| q.echo = false }
-      store = Seekrit::Store.new(password, DATAFILE)
-      return Seekrit::Interactor.new(store)
-    rescue Seekrit::DecryptionError => err
+  File.open(DATAFILE, "r+") do |file|
+    3.times do
+      begin
+        password = ask('Enter password: '){ |q| q.echo = false }
+        store = Seekrit::Store.new(password, file)
+        return Seekrit::Interactor.new(store)
+      rescue Seekrit::DecryptionError => err
+      end
     end
+    puts err.message
+    exit 1
   end
-  puts err.message
-  exit 1
 end
 
 command = ARGV.shift
 names = ARGV
 case command
 when 'show', 's'
-  interactor.show(names)
+  interactor.show names
 when 'edit', 'e'
-  interactor.edit(names)
+  interactor.edit names
 when 'list', 'l'
-  interactor.list(names)
+  interactor.list names
 when 'delete'
-  interactor.delete(names)
+  interactor.delete names
 when 'rename'
-  interactor.rename(names.shift, names.shift)
+  interactor.rename names.shift, names.shift
 when 'export'
-  interactor.export(names.shift)
+  interactor.export names.shift
+when 'import'
+  interactor.import names.shift
 else
   puts "Unknown command '#{command}'", '' if command
 puts <<END
