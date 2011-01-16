@@ -6,15 +6,16 @@ require 'fileutils'
 
 DATAFILE = ENV['HOME'] + '/.config/seekrit/secrets'
 
-def interactor
+def interactor(&blk)
   err = nil
   FileUtils.mkdir_p(File.dirname(DATAFILE))
-  File.open(DATAFILE, "r+") do |file|
+  File.open(DATAFILE, "a+") do |file|
     3.times do
       begin
         password = ask('Enter password: '){ |q| q.echo = false }
         store = Seekrit::Store.new(password, file)
-        return Seekrit::Interactor.new(store)
+        yield Seekrit::Interactor.new(store)
+        return
       rescue Seekrit::DecryptionError => err
       end
     end
@@ -27,19 +28,19 @@ command = ARGV.shift
 names = ARGV
 case command
 when 'show', 's'
-  interactor.show names
+  interactor{ |i| i.show names }
 when 'edit', 'e'
-  interactor.edit names
+  interactor{ |i| i.edit names }
 when 'list', 'l'
-  interactor.list names
+  interactor{ |i| i.list names }
 when 'delete'
-  interactor.delete names
+  interactor{ |i| i.delete names }
 when 'rename'
-  interactor.rename names.shift, names.shift
+  interactor{ |i| i.rename names.shift, names.shift }
 when 'export'
-  interactor.export names.shift
+  interactor{ |i| i.export names.shift }
 when 'import'
-  interactor.import names.shift
+  interactor{ |i| i.import names.shift }
 else
   puts "Unknown command '#{command}'", '' if command
 puts <<END
