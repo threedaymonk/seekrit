@@ -21,6 +21,19 @@ class StoreTest < Test::Unit::TestCase
     assert_equal "baz", s2["foo\tbar"]
   end
 
+  def test_should_not_change_unchanged_entries_when_saving
+    buffer1 = ""
+    s1 = Store.new("rhubarb", StringIO.new(buffer1))
+    s1["foo"] = "bar"
+    s1.save
+
+    buffer2 = buffer1.dup
+    s2 = Store.new("rhubarb", StringIO.new(buffer2))
+    s2.save
+
+    assert_equal buffer1, buffer2
+  end
+
   def test_should_not_decrypt_with_wrong_password
     buffer = ""
     s1 = Store.new("rhubarb", StringIO.new(buffer))
@@ -29,6 +42,7 @@ class StoreTest < Test::Unit::TestCase
 
     assert_raises DecryptionError do
       s2 = Store.new("custard", StringIO.new(buffer))
+      s2["foo"]
     end
   end
 

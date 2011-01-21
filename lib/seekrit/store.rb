@@ -23,11 +23,11 @@ module Seekrit
     end
 
     def [](name)
-      secrets[name]
+      decrypt(secrets[name])
     end
 
     def []=(name, value)
-      secrets[name] = value
+      secrets[name] = encrypt(value)
     end
     
     def delete(name)
@@ -42,13 +42,13 @@ module Seekrit
     def save
       @file.rewind
       secrets.sort_by{ |k,_| k }.each do |name, value|
-        @file << escape(name) << "\t" << hexdump(encrypt(value)) << "\n"
+        @file << escape(name) << "\t" << hexdump(value) << "\n"
       end
     end
 
     def export(io)
       secrets.sort_by{ |k,_| k }.each do |name, value|
-        io << escape(name) << "\t" << escape(value) << "\n"
+        io << escape(name) << "\t" << escape(decrypt(value)) << "\n"
       end
     end
 
@@ -84,7 +84,7 @@ module Seekrit
       data = {}
       while line = file.gets
         a, b = line.split(/\t/, 2)
-        data[unescape(a)] = decrypt(hexload(b))
+        data[unescape(a)] = hexload(b)
       end
       data
     end
