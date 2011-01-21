@@ -8,8 +8,11 @@ DATAFILE = ENV['HOME'] + '/.config/seekrit/secrets'
 
 def interactor(&blk)
   err = nil
-  FileUtils.mkdir_p(File.dirname(DATAFILE))
-  File.open(DATAFILE, "a+") do |file|
+  unless File.exist?(DATAFILE)
+    FileUtils.mkdir_p File.dirname(DATAFILE)
+    FileUtils.touch DATAFILE
+  end
+  File.open(DATAFILE, "r+") do |file|
     3.times do
       begin
         password = ask('Enter password: '){ |q| q.echo = false }
