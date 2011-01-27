@@ -21,6 +21,12 @@ class StoreTest < Test::Unit::TestCase
     assert_equal "baz", s2["foo\tbar"]
   end
 
+  def test_should_return_nil_for_non_existent_entry
+    buffer = ""
+    s1 = Store.new("rhubarb", StringIO.new(buffer))
+    assert_nil s1["foo"]
+  end
+
   def test_should_not_change_unchanged_entries_when_saving
     buffer1 = ""
     s1 = Store.new("rhubarb", StringIO.new(buffer1))

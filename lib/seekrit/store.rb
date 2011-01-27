@@ -23,7 +23,7 @@ module Seekrit
     end
 
     def [](name)
-      decrypt(secrets[name])
+      secrets[name] && decrypt(secrets[name])
     end
 
     def []=(name, value)
