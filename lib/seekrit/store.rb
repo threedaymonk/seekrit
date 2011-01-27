@@ -63,7 +63,7 @@ module Seekrit
   private
 
     def crypt_key
-      Digest::SHA256.digest(@password)
+      Digest::SHA256.digest(@password.respond_to?(:call) ? @password.call : @password)
     end
 
     def escape(value)
@@ -108,11 +108,25 @@ module Seekrit
     end
 
     def decrypt(data)
+      err = nil
+      3.times do
+        begin
+          k = @correct_key || crypt_key
+          decrypted = decrypt_once(data, k)
+          @correct_key ||= k
+          return decrypted
+        rescue DecryptionError => err
+        end
+      end
+      raise err
+    end
+
+    def decrypt_once(data, key)
       cipher = OpenSSL::Cipher::Cipher.new(@cipher)
       iv = data[0, cipher.iv_len]
       ciphertext = data[cipher.iv_len..-1]
       cipher.decrypt
-      cipher.key = crypt_key
+      cipher.key = key
       cipher.iv = iv
       plaintext = cipher.update(ciphertext)
       plaintext << cipher.final

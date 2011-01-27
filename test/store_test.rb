@@ -21,6 +21,40 @@ class StoreTest < Test::Unit::TestCase
     assert_equal "baz", s2["foo\tbar"]
   end
 
+  def test_should_save_and_retrieve_with_lambda_as_key
+    password = lambda{ "rhubarb" }
+    buffer = ""
+    s1 = Store.new(password, StringIO.new(buffer))
+    s1["foo"] = "bar"
+    s1.save
+
+    s2 = Store.new(password, StringIO.new(buffer))
+    assert_equal "bar", s2["foo"]
+  end
+
+  def test_should_call_password_up_to_three_times_on_error
+    called = 0
+    password = lambda{
+      called += 1
+      if called == 3
+        "correct"
+      else
+        "incorrect"
+      end
+    }
+
+    buffer = ""
+    s1 = Store.new("correct", StringIO.new(buffer))
+    s1["foo"] = "bar"
+    s1.save
+
+    s2 = Store.new(password, StringIO.new(buffer))
+    assert_equal "bar", s2["foo"]
+    assert_equal "bar", s2["foo"]
+
+    assert_equal 3, called
+  end
+
   def test_should_return_nil_for_non_existent_entry
     buffer = ""
     s1 = Store.new("rhubarb", StringIO.new(buffer))

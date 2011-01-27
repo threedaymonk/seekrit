@@ -13,17 +13,14 @@ def interactor(&blk)
     FileUtils.touch DATAFILE
   end
   File.open(DATAFILE, "r+") do |file|
-    3.times do
-      begin
-        password = ask('Enter password: '){ |q| q.echo = false }
-        store = Seekrit::Store.new(password, file)
-        yield Seekrit::Interactor.new(store)
-        return
-      rescue Seekrit::DecryptionError => err
-      end
+    begin
+      password = lambda{ ask('Enter password: '){ |q| q.echo = false } }
+      store = Seekrit::Store.new(password, file)
+      yield Seekrit::Interactor.new(store)
+    rescue Seekrit::DecryptionError => err
+      puts err.message
+      exit 1
     end
-    puts err.message
-    exit 1
   end
 end
 
