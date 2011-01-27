@@ -108,4 +108,14 @@ class StoreTest < Test::Unit::TestCase
     assert_equal "backslash\\and\ttab", s2["bar"]
   end
 
+  def test_should_not_need_password_for_list
+    buffer = ""
+    s1 = Store.new("rhubarb", StringIO.new(buffer))
+    s1["foo"] = "bar"
+    s1.save
+
+    s2 = Store.new(lambda{ raise "called" }, StringIO.new(buffer))
+    assert_equal ["foo"], s2.keys
+  end
+
 end
