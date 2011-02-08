@@ -3,7 +3,7 @@ require 'openssl'
 require 'yaml'
 
 module Seekrit
-  class DecryptionError < RuntimeError
+  class PasswordError < RuntimeError
   end
   
   class Store
@@ -62,7 +62,7 @@ module Seekrit
 
   private
 
-    def crypt_key
+    def get_key_from_user
       Digest::SHA256.digest(@password.respond_to?(:call) ? @password.call : @password)
     end
 
@@ -98,9 +98,16 @@ module Seekrit
     end
 
     def encrypt(data)
+      unless @correct_key
+        if secrets.any?
+          decrypt(secrets.values.first)
+        else
+          @correct_key = get_key_from_user
+        end
+      end
       cipher = OpenSSL::Cipher::Cipher.new(@cipher)
       cipher.encrypt
-      cipher.key = crypt_key
+      cipher.key = @correct_key
       cipher.iv = iv = cipher.random_iv
       ciphertext = cipher.update(data)
       ciphertext << cipher.final
@@ -111,11 +118,11 @@ module Seekrit
       err = nil
       3.times do
         begin
-          k = @correct_key || crypt_key
+          k = @correct_key || get_key_from_user
           decrypted = decrypt_once(data, k)
           @correct_key ||= k
           return decrypted
-        rescue DecryptionError => err
+        rescue PasswordError => err
         end
       end
       raise err
@@ -132,7 +139,7 @@ module Seekrit
       plaintext << cipher.final
       return plaintext
     rescue => err
-      raise DecryptionError, err.message
+      raise PasswordError, err.message
     end
   end
 end

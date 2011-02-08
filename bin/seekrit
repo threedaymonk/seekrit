@@ -24,7 +24,7 @@ def interactor(&blk)
       password = lambda{ ask('Enter password: '){ |q| q.echo = false } }
       store = Seekrit::Store.new(password, file)
       yield Seekrit::Interactor.new(store)
-    rescue Seekrit::DecryptionError => err
+    rescue Seekrit::PasswordError => err
       puts err.message
       exit 1
     end

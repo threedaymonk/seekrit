@@ -55,6 +55,40 @@ class StoreTest < Test::Unit::TestCase
     assert_equal 3, called
   end
 
+  def test_should_remember_correct_password
+    called = 0
+    password = lambda{
+      called += 1
+      "correct"
+    }
+
+    buffer = ""
+    s1 = Store.new("correct", StringIO.new(buffer))
+    s1["foo"] = "bar"
+    s1.save
+
+    s2 = Store.new(password, StringIO.new(buffer))
+    s2["foo"]
+    assert_equal 1, called
+
+    s2["foo"] = "baz"
+    s2.save
+    assert_equal 1, called
+  end
+
+  def test_should_enforce_existing_password
+    buffer = ""
+    s1 = Store.new("correct", StringIO.new(buffer))
+    s1["foo"] = "bar"
+    s1.save
+
+    assert_raises PasswordError do
+      s2 = Store.new("incorrect", StringIO.new(buffer))
+      s2["baz"] = "quux"
+      s2.save
+    end
+  end
+
   def test_should_return_nil_for_non_existent_entry
     buffer = ""
     s1 = Store.new("rhubarb", StringIO.new(buffer))
@@ -80,7 +114,7 @@ class StoreTest < Test::Unit::TestCase
     s1["foo"] = "bar"
     s1.save
 
-    assert_raises DecryptionError do
+    assert_raises PasswordError do
       s2 = Store.new("custard", StringIO.new(buffer))
       s2["foo"]
     end
