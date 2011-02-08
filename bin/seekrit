@@ -4,15 +4,22 @@ require 'seekrit/interactor'
 require 'highline/import'
 require 'fileutils'
 
-DATAFILE = ENV['HOME'] + '/.config/seekrit/secrets'
+SEEKRIT_DIR = File.join(ENV["HOME"], ".config", "seekrit")
+PRE_LOAD    = "pre-load"
+POST_SAVE   = "post-save"
+SECRETS     = "secrets"
+
+def run(file)
+  return unless File.exist?(file)
+  system "./#{file}"
+end
 
 def interactor(&blk)
-  err = nil
-  unless File.exist?(DATAFILE)
-    FileUtils.mkdir_p File.dirname(DATAFILE)
-    FileUtils.touch DATAFILE
-  end
-  File.open(DATAFILE, "r+") do |file|
+  FileUtils.mkdir_p SEEKRIT_DIR
+  Dir.chdir SEEKRIT_DIR
+  run PRE_LOAD
+  FileUtils.touch SECRETS unless File.exist?(SECRETS)
+  File.open(SECRETS, "r+") do |file|
     begin
       password = lambda{ ask('Enter password: '){ |q| q.echo = false } }
       store = Seekrit::Store.new(password, file)
@@ -22,6 +29,7 @@ def interactor(&blk)
       exit 1
     end
   end
+  run POST_SAVE
 end
 
 command = ARGV.shift
