@@ -80,10 +80,6 @@ module Seekrit
       File.open(RANDOM_SOURCE){ |io| io.read(num_bytes) }
     end
 
-    def puts(*args)
-      $stderr.puts(*args)
-    end
-
     def external_editor(data, &blk)
       tempfile = Tempfile.new('seekrit')
       tempfile << data
