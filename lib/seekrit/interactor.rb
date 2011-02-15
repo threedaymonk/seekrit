@@ -12,10 +12,7 @@ module Seekrit
     end
 
     def show(names)
-      names.each do |name|
-        data = store[name]
-        puts(name, data, '')
-      end
+      puts *names.map{ |n| [n, store[n] || "(None)", ""].compact }.flatten
     end
 
     def edit(names)
