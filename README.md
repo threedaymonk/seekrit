@@ -5,6 +5,7 @@ seekrit is a password safe with the following features:
 
 * Secret data is encrypted using AES-256
 * The data is stored in an ordered line-oriented format to facilitate version control
+* Remote synchronisation is supported via shell scripts
 
 Usage
 -----
@@ -30,7 +31,7 @@ Data is stored in `~/.config/seekrit/data`
 Synchronisation
 ---------------
 
-Two scripts are run before and after operations:
+Two scripts are run before and after operations, if they exist:
 
 * `~/.config/seekrit/pre-load` is run before every lookup
 * `~/.config/seekrit/post-save` is run after a change is made
